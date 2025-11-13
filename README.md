@@ -85,6 +85,25 @@ These directories are git-ignored, so feel free to symlink if your storage lives
    ```
 3. Run `demo/cell_type_prediction.ipynb` to sanity-check Path-A, Path-B, and GateMix end-to-end with the processed data. The notebook mirrors the CLI flows.
 
+### Using your own pipeline
+
+Already have a preprocessing script/notebook? Produce the same trio of files per dataset (`annotations.json`, `patches_224x224.h5`, `patches_1024x1024.h5`) and store them anywhere on disk, e.g.
+
+```
+/data/xenium/my_sample/
+├── annotations.json
+├── patches_224x224.h5
+└── patches_1024x1024.h5
+```
+
+Then either:
+
+- add the folder to `NUCLASS_DATA_DIRS` (colon-separated), or  
+- reference it directly inside your holdout JSON (`Nuclass/test/configs/...`), or  
+- drop the folder under `Nuclass/demo/<name>` if you want to reuse the demo paths.
+
+As long as the three files exist per dataset, the training/eval scripts pick them up without further code changes.
+
 ---
 
 ## 4. Training
