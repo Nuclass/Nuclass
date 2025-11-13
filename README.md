@@ -33,14 +33,13 @@ cd preprocess_tutorial/Xenium_colon_wsi
 
 # Output files
 wget https://s3-us-west-2.amazonaws.com/10x.files/samples/xenium/1.6.0/Xenium_V1_hColon_Cancer_Add_on_FFPE/Xenium_V1_hColon_Cancer_Add_on_FFPE_outs.zip
-wget https://cf.10xgenomics.com/samples/xenium/1.6.0/Xenium_V1_hColon_Cancer_Add_on_FFPE/Xenium_V1_hColon_Cancer_Add_on_FFPE_xe_outs.zip
 
 # Supplemental files
 wget https://cf.10xgenomics.com/samples/xenium/1.6.0/Xenium_V1_hColon_Cancer_Add_on_FFPE/Xenium_V1_hColon_Cancer_Add_on_FFPE_he_image.ome.tif
 wget https://cf.10xgenomics.com/samples/xenium/1.6.0/Xenium_V1_hColon_Cancer_Add_on_FFPE/Xenium_V1_hColon_Cancer_Add_on_FFPE_he_imagealignment.csv
 ```
 
-Unzip both archives in-place—`preprocess_tutorial/Xenium_colon_wsi/` is already ignored by git.
+Unzip the zip file in-place—`preprocess_tutorial/Xenium_colon_wsi/outs/` is already ignored by git.
 
 > We no longer ship `demo/pancreas/` to keep the repo lightweight. Running the preprocessing notebook on any Xenium dataset recreates the demo assets locally.
 
