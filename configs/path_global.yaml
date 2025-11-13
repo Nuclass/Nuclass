@@ -1,0 +1,59 @@
+experiment_name: path_global_release
+project_name: nuclass_release
+entity: anonymous
+
+gpus: [0]
+batch_size: 256
+accumulate_grad_batches: 2
+uni_grad_ckpt: false
+gpu_prefetch_train: true
+gpu_prefetch_val: false
+optimizer_fused: true
+torch_compile: false
+gpu_resize_ctx: true
+gradient_clip_val: 0.0
+
+num_workers: 12
+prefetch_factor: 4
+seed: 42
+max_epochs: 40
+
+lr_uni: 2.0e-6
+lr_head: 3.0e-4
+weight_decay: 2.0e-5
+warmup_steps: 2000
+lrd_gamma: 0.85
+
+label_smoothing: 0.05
+cb_beta: 0.9999
+tissue_embedding_dim: 64
+
+freeze_uni_epochs: 0
+freeze_dino: true
+lr_dino: 1.0e-6
+
+dino_model: facebook/dinov3-vitl16-pretrain-lvd1689m
+ctx_img_size: 512
+use_pooler: true
+ctx_read_mode: auto
+
+ctx_alpha_init: 0.25
+ctx_alpha_final: 1.0
+ctx_alpha_warmup_epochs: 2
+ctx_dropout: 0.1
+ctx_microbatch: 16
+
+fast_preflight: true
+val_check_interval: 0.25
+early_stopping_patience: 4
+
+h5_open_swmr: true
+h5_rdcc_nbytes: 536870912   # 512 * 1024 * 1024
+h5_rdcc_nslots: 1048579
+h5_rdcc_w0: 0.75
+h5_index_cache_dir: ~/.cache/pathb_h5
+use_h5_index_cache: true
+keys_check_samples: 4
+
+teacher_ckpt_rel: path_local_release/best.ckpt
+a_focus_gamma: 2.0

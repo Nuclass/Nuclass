@@ -1,0 +1,22 @@
+{
+  "ovary": {
+    "root": "/abs/path/to/ovary_holdout",
+    "mode": "xenium_exact",
+    "tissue": "ovary"
+  },
+  "lung": {
+    "root": "/abs/path/to/lung_holdout",
+    "mode": "xenium_exact",
+    "tissue": "lung"
+  },
+  "pancreas": {
+    "root": "/abs/path/to/pancreas_holdout",
+    "mode": "xenium_exact",
+    "tissue": "pancreas"
+  },
+  "lizard": {
+    "root": "/abs/path/to/lizard_holdout",
+    "mode": "lizard_grouped",
+    "tissue": "colon"
+  }
+}

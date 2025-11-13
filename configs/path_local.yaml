@@ -1,0 +1,24 @@
+experiment_name: path_local_release
+project_name: nuclass_release
+entity: anonymous
+
+gpus: [0]
+batch_size: 512
+accumulate_grad_batches: 2
+num_workers: 16
+seed: 42
+max_epochs: 50
+
+lr_uni: 3.0e-6
+lr_head: 3.0e-4
+weight_decay: 2.0e-5
+warmup_steps: 1500
+lrd_gamma: 0.85
+
+label_smoothing: 0.1
+cb_beta: 0.9999
+tissue_embedding_dim: 64
+freeze_backbone_epochs: 1
+
+val_check_interval: 0.25
+early_stopping_patience: 4

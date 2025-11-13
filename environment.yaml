@@ -1,0 +1,37 @@
+name: nuclass
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip=24.3
+  - pytorch=2.4.*=py3.10_cuda12.1*
+  - torchvision=0.19.*=py310_cu121*
+  - torchaudio=2.4.*=py310_cu121*
+  - pytorch-cuda=12.1
+  - numpy>=1.24
+  - pandas>=2.2
+  - scipy>=1.11
+  - scikit-learn>=1.5
+  - matplotlib>=3.8
+  - seaborn>=0.13
+  - pillow>=10.0
+  - h5py>=3.11
+  - pyyaml>=6.0
+  - tqdm>=4.66
+  - ipykernel>=6.29
+  - ca-certificates
+  - openssl
+  - pip:
+      - lightning>=2.4
+      - timm>=1.0.9
+      - transformers>=4.46
+      - accelerate>=1.2
+      - open-clip-torch>=2.24
+      - umap-learn>=0.5.6
+      - einops>=0.8
+      - sentencepiece>=0.2
+      - wandb>=0.17
+      - pandas-stubs>=2.2.2.240909
