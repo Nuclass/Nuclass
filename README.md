@@ -7,7 +7,7 @@ End-to-end training, inference, and figure reproduction for the double-blind Nuc
 ## 1. Installation
 
 ```bash
-git clone https://github.com/<org>/Nuclass.git
+git clone https://github.com/Nuclass/Nuclass.git
 cd Nuclass
 conda env create -f environment.yaml
 conda activate nuclass
@@ -23,7 +23,7 @@ pip install -e .
 ### 2.1 Xenium datasets
 
 We support any 10x Genomics Xenium FFPE dataset (Human, 1.6.0 or later). Browse and download from:  
-[https://www.10xgenomics.com/datasets?configure%5BhitsPerPage%5D=50&configure%5BmaxValuesPerFacet%5D=1000&query=Xenium&refinementList%5Bspecies%5D%5B0%5D=Human](https://www.10xgenomics.com/datasets?configure%5BhitsPerPage%5D=50&configure%5BmaxValuesPerFacet%5D=1000&query=Xenium&refinementList%5Bspecies%5D%5B0%5D=Human)
+[10X_Genomics_Xenium](https://www.10xgenomics.com/datasets?configure%5BhitsPerPage%5D=50&configure%5BmaxValuesPerFacet%5D=1000&query=Xenium&refinementList%5Bspecies%5D%5B0%5D=Human)
 
 For the release tutorial we reference the Xenium Colon add-on FFPE sample. Download all archives into `preprocess_tutorial/Xenium_colon_wsi/`:
 
