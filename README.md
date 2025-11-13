@@ -1,4 +1,4 @@
-<embed src="figures/Figure_1.pdf" width="800px" height="600px" />
+![Nuclass Figure](figures/figure_1.png)
 
 
 # Nuclass: Adaptive Multi-Scale Integration Unlocks Robust Cell Annotation in Histopathology Images
