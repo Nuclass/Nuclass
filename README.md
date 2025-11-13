@@ -1,4 +1,5 @@
-![Nuclass Figure](figures/Figure_1.pdf)
+<embed src="figures/Figure_1.pdf" width="800px" height="600px" />
+
 
 # Nuclass: Adaptive Multi-Scale Integration Unlocks Robust Cell Annotation in Histopathology Images
 
@@ -6,7 +7,7 @@
 
 Distinguishing cell/nuclei types and subtypes from routine histopathology images is key to advancing computational understanding of human disease. Current tile-based models can capture detailed nuclear appearances but often overlook the broader tissue context that influences a cell's function and identity. Moreover, existing human annotations are coarse-grained, making it difficult to achieve fine-grained, cell subtype–level labeling.
 
-We introduce **NuClass**, a pathologist-inspired framework for *cell-wise* multi-scale inference that integrates both morphology and microenvironmental context. Specifically, **Path local** focuses on nuclear morphology from \(224^{2}\) pixel image crops, while **Path global** models the surrounding \(1024^{2}\) pixel neighborhood. A learnable gating module fuses their per-cell probability outputs, adaptively balancing local detail and contextual cues. To promote complementary learning, we incorporate an uncertainty-guided objective that drives the global path to focus on regions where the local path is uncertain, and we ensure model interpretability through calibrated confidence and saliency visualization.
+We introduce **NuClass**, a pathologist-inspired framework for *cell-wise* multi-scale inference that integrates both morphology and microenvironmental context. Specifically, **Path local** focuses on nuclear morphology from **224×224-pixel** image crops, while **Path global** models the surrounding **1024×1024-pixel** neighborhood. A learnable gating module fuses their per-cell probability outputs, adaptively balancing local detail and contextual cues. To promote complementary learning, we incorporate an uncertainty-guided objective that drives the global path to focus on regions where the local path is uncertain, and we ensure model interpretability through calibrated confidence and saliency visualization.
 
 To address the lack of fine supervision, we construct a large-scale, marker-guided dataset from Xenium-like spatial transcriptomics assays, providing pixel-level cell-type labels for over two million cells across eight organs and sixteen classes. Evaluated on four fully held-out cohorts (~300k cells), NuClass achieves up to **96% F1 (macro or micro? TBD)**, outperforming strong baselines while maintaining high calibration and interpretability.
 
