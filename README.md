@@ -13,11 +13,6 @@ To address the lack of fine supervision, we construct a large-scale, marker-guid
 
 Our results demonstrate that multi-scale, uncertainty-aware fusion can bridge the gap between slide-level pathological foundation vision models and reliable, cell-level phenotyping.
 
----
-
-End-to-end training, inference, and figure reproduction for the double-blind NuClass manuscript. Paths are fully configurable so collaborators can recreate every experiment after downloading the required public assets.
-
----
 
 ## 1. Installation
 
