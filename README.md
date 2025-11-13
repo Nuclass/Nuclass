@@ -43,7 +43,7 @@ Unzip the zip file in-place—`preprocess_tutorial/Xenium_colon_wsi/outs/` is al
 
 > We no longer ship `demo/pancreas/` to keep the repo lightweight. Running the preprocessing notebook on any Xenium dataset recreates the demo assets locally.
 
-### 2.2 Backbones (DINO)
+### 2.2 Backbones (DINOv3)
 
 The fusion/global branches expect the DINOv3 ViT-L/16 release under `backbones/facebook/dinov3-vitl16-pretrain-lvd1689m/`. Download from Hugging Face (requires `huggingface_hub>=0.23`):
 
