@@ -9,7 +9,6 @@ Path-B inference (release)
 - DINO forward runs in micro-batches to avoid memory spikes
 - Holdout label alignment:
   * Xenium: strict one-to-one (drop {'SMC/Pericyte','Myeloid'}, normalize synonyms)
-  * Lizard: collapse into three groups (plasma->Lymphocyte; drop neutrophil/eosinophil)
 - Outputs match A/PLIP/LOKI conventions:
   embeddings.npy (= fused 1024D), probe.npy (= embeddings), probs.npy (eval classes),
   labels.npy, preds.npy, metrics.json
@@ -79,14 +78,6 @@ EXACT_REMOVE = {"SMC/Pericyte","Myeloid"}
 EXACT_HOLDOUT_TO_TRAIN = {
     "Epithelial_Malignant":"Epithelial_Malignant","Fibroblast":"Fibroblast","Macrophage":"Macrophage","Endothelial":"Endothelial",
     "Ductal":"Ductal","Acinar":"Acinar","Endocrine":"Endocrine","Monocyte":"Monocyte","T_Cell":"T_Cell","B_Cell":"B_Cell","NK_Cell":"NK_Cell",
-}
-
-# Lizard grouping (plasma->Lymphocyte; drop neutrophil/eosinophil)
-LIZARD_RAW_TO_GROUP = {"epithelial":"Epithelial","connective":"Connective","lymphocyte":"Lymphocyte","plasma":"Lymphocyte"}
-LIZARD_GROUP_TO_TRAIN = {
-    "Epithelial": ["Epithelial_Malignant","Ductal","Acinar","Epithelial_Airway","Epithelial_Alveolar"],
-    "Connective": ["Fibroblast","Tumor_Associated_Fibroblast","Smooth_Muscle"],
-    "Lymphocyte": ["T_Cell","B_Cell","NK_Cell","Plasma_Cell","Macrophage","Monocyte"],
 }
 
 # ============== Constants ==============
@@ -182,25 +173,6 @@ def build_xenium_exact_df(ann_json: str, train_class_names: List[str]) -> Tuple[
     df["label"]=df["aligned"].map(c2i_used).astype(int)
     print(f"  - Samples={len(df)} | evaluation classes={len(used)}")
     return df[["cell_id","label","aligned"]], used, idx_in_train
-
-def build_lizard_group_df(ann_json: str, train_class_names: List[str]) -> Tuple[pd.DataFrame, np.ndarray, List[str]]:
-    print(f"  - Reading annotations from {ann_json}")
-    df=pd.read_json(ann_json, orient="index").reset_index().rename(columns={"index":"cell_id"})
-    lab=_pick_label_column(df); df["raw"]=df[lab].astype(str).str.strip().str.lower()
-    valid=set(LIZARD_RAW_TO_GROUP.keys()); df=df[df["raw"].isin(valid)].copy()
-    df["group"]=df["raw"].map(LIZARD_RAW_TO_GROUP)
-    used=["Epithelial","Connective","Lymphocyte"]; c2i={n:i for i,n in enumerate(used)}
-    df["label"]=df["group"].map(c2i).astype(int)
-    # Group -> training-class probability projection matrix
-    t2i={n:i for i,n in enumerate(train_class_names)}
-    M=np.zeros((len(train_class_names), len(used)), dtype=np.float32)
-    for gi,g in enumerate(used):
-        for t in LIZARD_GROUP_TO_TRAIN[g]:
-            if t in t2i: M[t2i[t], gi]=1.0
-    row = M.sum(1, keepdims=True); row[row==0]=1.0
-    M = M/row
-    print(f"  - Samples={len(df)} | evaluation groups={used}")
-    return df[["cell_id","label","group"]], M, used
 
 # ============== Model (same submodules as training) ==============
 class FiLM(nn.Module):
@@ -325,16 +297,10 @@ def infer_holdout(model: PathBInfer, ckpt_classes: List[str], name: str, root: s
     if not os.path.exists(p1024):raise FileNotFoundError(p1024)
 
     # Build evaluation label space
-    if mode=="xenium_exact":
-        df_eval, used_names, idx_in_train = build_xenium_exact_df(ann, ckpt_classes)
-        used_idx = torch.as_tensor(idx_in_train, dtype=torch.long, device="cuda" if torch.cuda.is_available() else "cpu")
-        M = None
-    elif mode=="lizard_grouped":
-        df_eval, M, used_names = build_lizard_group_df(ann, ckpt_classes)
-        used_idx=None
-        M = torch.from_numpy(M).to(device="cuda" if torch.cuda.is_available() else "cpu", dtype=torch.float32)
-    else:
-        raise ValueError(mode)
+    if mode != "xenium_exact":
+        raise ValueError(f"Unsupported mode '{mode}'. Only 'xenium_exact' is available.")
+    df_eval, used_names, idx_in_train = build_xenium_exact_df(ann, ckpt_classes)
+    used_idx = torch.as_tensor(idx_in_train, dtype=torch.long, device="cuda" if torch.cuda.is_available() else "cpu")
 
     with open(os.path.join(out_dir, "class_names_used.json"), "w") as f:
         json.dump(used_names, f, indent=2)
@@ -370,10 +336,7 @@ def infer_holdout(model: PathBInfer, ckpt_classes: List[str], name: str, root: s
         zB, emb = model(x224, xctx, tissues)          # [N,C], [N,1024]
         p_train = torch.softmax(zB,1).to(dtype=torch.float32)
 
-        if mode=="xenium_exact":
-            probs = p_train.index_select(1, used_idx)
-        else:
-            probs = p_train @ M
+        probs = p_train.index_select(1, used_idx)
 
         all_emb.append(emb.cpu()); all_probs.append(probs.cpu())
         all_labels.append(torch.tensor(part["label"].values, dtype=torch.long))

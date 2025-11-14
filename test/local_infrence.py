@@ -2,7 +2,6 @@
 """
 Path-A inference (aligned & robust)
 - Xenium: strict 1:1 class-space alignment after robust normalization
-- Lizard: 3-group probability projection (matrix M), not naive slicing
 - Hard checks: class-name alignment assertions + explicit mapping print
 - Outputs: embeddings/probe/logits/probs_used/y_true/y_pred/metrics + CM
 """
@@ -102,14 +101,6 @@ EXACT_TO_TRAIN_ID = {
     "B_Cell":"B_Cell", 
     "NK_Cell":"NK_Cell", 
     "Plasma_Cell":"Plasma_Cell",
-}
-
-# -------- lizard (3 groups) --------
-LIZARD_KEEP = {"epithelial":"Epithelial", "connective":"Connective", "lymphocyte":"Lymphocyte", "plasma":"Lymphocyte"}
-LIZARD_GROUP_TO_TRAIN = {
-    "Epithelial": ["Epithelial_Malignant","Ductal","Acinar","Epithelial_Airway","Epithelial_Alveolar"],
-    "Connective": ["Fibroblast","Tumor_Associated_Fibroblast","Smooth_Muscle"],
-    "Lymphocyte": ["T_Cell","B_Cell","NK_Cell","Plasma_Cell"],  
 }
 
 # ---------------- model (Path-A) ----------------
@@ -250,32 +241,6 @@ def build_xenium_exact_df(ann_json:str, train_names:List[str]):
         print(f"      {n:28s} -> train_col {i}")
     return df[["cell_id","label_used","aligned"]], used, used_index_in_train
 
-def build_lizard_group_df(ann_json:str, train_names:List[str]):
-    print(f"  - Reading annotations from {ann_json}")
-    df=pd.read_json(ann_json,orient="index").reset_index().rename(columns={"index":"cell_id"})
-    for k in ["class_id","label","cell_type","type","annotation"]:
-        if k in df.columns: lbl=k; break
-    else: raise KeyError("annotations.json is missing the label column")
-    df["orig"]=df[lbl].astype(str).str.strip().str.lower()
-    cnt_before=df["orig"].value_counts().to_dict()
-    df=df[df["orig"].isin(LIZARD_KEEP.keys())].copy()
-    df["group"]=df["orig"].map(LIZARD_KEEP)
-    used=["Epithelial","Connective","Lymphocyte"]; c2i={n:i for i,n in enumerate(used)}
-    df["label_used"]=df["group"].map(c2i).astype(int)
-    cnt_after=df["group"].value_counts().to_dict()
-    print(f"  - Samples={len(df)} | classes before mapping={len(cnt_before)} | after mapping={len(cnt_after)}")
-    _print_counts("Label counts before mapping", cnt_before); _print_counts("Evaluation groups (post-mapping)", cnt_after)
-
-    # Build projection matrix M (training class -> group)
-    t2i={n:i for i,n in enumerate(train_names)}; Kt=len(train_names); Kg=len(used)
-    M=np.zeros((Kt,Kg),dtype=np.float32)
-    for j,g in enumerate(used):
-        covered=[t for t in LIZARD_GROUP_TO_TRAIN[g] if t in t2i]
-        print(f"    [coverage] {g}: {covered if covered else '<<ZERO COVERAGE>>'}")
-        for t in covered: M[t2i[t], j]=1.0
-    row_sum=M.sum(axis=1, keepdims=True); M=M/np.where(row_sum>0,row_sum,1.0)
-    return df[{"cell_id","label_used","group"}], used, M
-
 # ---------------- inference per holdout ----------------
 @torch.no_grad()
 def infer_one_holdout(model:AOnlyModule, train_names:List[str], holdout_name:str, root:str, mode:str, tissue:str, out_dir:str, device:str="cuda"):
@@ -285,12 +250,9 @@ def infer_one_holdout(model:AOnlyModule, train_names:List[str], holdout_name:str
     if not os.path.exists(ann_json): raise FileNotFoundError(ann_json)
     if not os.path.exists(h5_path):  raise FileNotFoundError(h5_path)
 
-    if mode=="xenium_exact":
-        df, used_classes, used_index_in_train = build_xenium_exact_df(ann_json, train_names)
-        proj_M=None
-    else:
-        df, used_classes, proj_M = build_lizard_group_df(ann_json, train_names)
-        used_index_in_train=None
+    if mode!="xenium_exact":
+        raise ValueError(f"Unsupported mode '{mode}'. Only 'xenium_exact' is available.")
+    df, used_classes, used_index_in_train = build_xenium_exact_df(ann_json, train_names)
 
     with open(os.path.join(out_dir,"class_names_used.json"),"w") as f: json.dump(used_classes, f, indent=2)
 
@@ -304,12 +266,8 @@ def infer_one_holdout(model:AOnlyModule, train_names:List[str], holdout_name:str
         t=organ_vec.expand(x.shape[0])
         with torch.autocast(device_type=("cuda" if device=="cuda" else "cpu"), dtype=torch.bfloat16, enabled=(device=="cuda")):
             feats=model.extract_features(x,t); logits=model.head(feats); p_train=torch.softmax(logits,dim=1)
-            if mode=="xenium_exact":
-                idx=torch.tensor(used_index_in_train, dtype=torch.long, device=p_train.device)
-                p_used=p_train.index_select(1, idx)
-            else:
-                M=torch.tensor(proj_M, dtype=p_train.dtype, device=p_train.device)
-                p_used=p_train @ M
+            idx=torch.tensor(used_index_in_train, dtype=torch.long, device=p_train.device)
+            p_used=p_train.index_select(1, idx)
         feats_all.append(feats.float().cpu()); logits_all.append(logits.float().cpu())
         probs_used_all.append(p_used.float().cpu()); y_all.append(torch.tensor(part["label_used"].values, dtype=torch.long))
         ids += part["cell_id"].tolist()

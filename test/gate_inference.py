@@ -3,9 +3,7 @@
 FuseAB GateMix inference (aligned with the Path-A evaluation recipe)
 - Restores modelA/modelB/gate from the fusion checkpoint with FiLM key compatibility.
 - Prefers class_names from ckptA (hyper_parameters.ckptA) and falls back to ckptB.
-- Evaluation modes:
-  * Xenium (ovary/lung/pancreas): strict class mapping (synonym normalization, drop SMC/Pericyte + Myeloid)
-  * Lizard: collapse into epithelial/connective/lymphocyte groups (plasma->lymphocyte)
+- Evaluation mode: Xenium (ovary/lung/pancreas) with strict class mapping (synonym normalization, drop SMC/Pericyte + Myeloid).
 - Outputs per-class F1/ACC for the mixed logits, confusion matrix PNG, and metrics.json.
 """
 
@@ -90,13 +88,6 @@ EXACT_TO_TRAIN = {
     "Fibroblast":"Fibroblast", "Ductal":"Ductal", "Endothelial":"Endothelial", "Macrophage":"Macrophage",
     "Acinar":"Acinar", "Endocrine":"Endocrine", "Tumor_Associated_Fibroblast":"Tumor_Associated_Fibroblast",
     "Monocyte":"Monocyte", "T_Cell":"T_Cell", "B_Cell":"B_Cell", "NK_Cell":"NK_Cell", "Plasma_Cell":"Plasma_Cell",
-}
-
-LIZARD_RAW_TO_GROUP = {"epithelial":"Epithelial","connective":"Connective","lymphocyte":"Lymphocyte","plasma":"Lymphocyte"}
-LIZARD_GROUP_TO_TRAIN = {
-    "Epithelial": ["Epithelial_Malignant","Ductal","Acinar","Epithelial_Airway","Epithelial_Alveolar"],
-    "Connective": ["Fibroblast","Tumor_Associated_Fibroblast","Smooth_Muscle"],
-    "Lymphocyte": ["T_Cell","B_Cell","NK_Cell","Plasma_Cell"],
 }
 
 # ---------------- Image normalization ----------------
@@ -201,27 +192,6 @@ def build_xenium_exact_df(ann_json: str, train_names: List[str]) -> Tuple[pd.Dat
         print(f"      {n:28s} -> train_col {i}")
     print(f"  - Samples={len(df)} | evaluation classes={len(used)}")
     return df[["cell_id","label","aligned"]], used, used_index_in_train
-
-def build_lizard_group_df(ann_json: str, train_names: List[str]) -> Tuple[pd.DataFrame, np.ndarray, List[str]]:
-    print(f"  - Reading annotations from {ann_json}")
-    df=pd.read_json(ann_json, orient="index").reset_index().rename(columns={"index":"cell_id"})
-    lab=_pick_label_column(df)
-    df["raw"]=df[lab].astype(str).strip().str.lower()
-    df=df[df["raw"].isin(LIZARD_RAW_TO_GROUP.keys())].copy()
-    df["group"]=df["raw"].map(LIZARD_RAW_TO_GROUP)
-    used=["Epithelial","Connective","Lymphocyte"]; c2i={n:i for i,n in enumerate(used)}
-    df["label"]=df["group"].map(c2i).astype(int)
-
-    t2i={n:i for i,n in enumerate(train_names)}
-    M=np.zeros((len(train_names), len(used)), dtype=np.float32)
-    for j,g in enumerate(used):
-        covered=[t for t in LIZARD_GROUP_TO_TRAIN[g] if t in t2i]
-        print(f"    [coverage] {g}: {covered if covered else '<<ZERO COVERAGE>>'}")
-        for t in covered: M[t2i[t], j]=1.0
-    row=M.sum(1, keepdims=True); row[row==0]=1.0
-    M=M/row
-    print(f"  - Samples={len(df)} | evaluation groups={used}")
-    return df[["cell_id","label","group"]], M, used
 
 # ---------------- Model definitions (training-aligned + FiLM-compatible) ----------------
 # timm MLP compatibility
@@ -432,15 +402,10 @@ def infer_holdout(model: FuseABGateInfer, train_classes: List[str], name: str, r
     if not os.path.exists(p224): raise FileNotFoundError(p224)
     if not os.path.exists(p1024):raise FileNotFoundError(p1024)
 
-    if mode=="xenium_exact":
-        df_eval, used_names, idx_in_train = build_xenium_exact_df(ann, train_classes)
-        used_idx = torch.as_tensor(idx_in_train, dtype=torch.long, device="cuda" if torch.cuda.is_available() else "cpu")
-        M=None
-    elif mode=="lizard_grouped":
-        df_eval, M_np, used_names = build_lizard_group_df(ann, train_classes)
-        used_idx=None; M=torch.from_numpy(M_np).to(device="cuda" if torch.cuda.is_available() else "cpu", dtype=torch.float32)
-    else:
-        raise ValueError(mode)
+    if mode != "xenium_exact":
+        raise ValueError(f"Unsupported mode '{mode}'. Only 'xenium_exact' is available.")
+    df_eval, used_names, idx_in_train = build_xenium_exact_df(ann, train_classes)
+    used_idx = torch.as_tensor(idx_in_train, dtype=torch.long, device="cuda" if torch.cuda.is_available() else "cpu")
 
     with open(os.path.join(out_dir,"class_names_used.json"),"w") as f: json.dump(used_names, f, indent=2)
 
@@ -473,14 +438,9 @@ def infer_holdout(model: FuseABGateInfer, train_classes: List[str], name: str, r
             pA,pB,pM,g,emb = model(x224,xctx,tissue_ids)
             pA=pA.to(dtype=torch.float32); pB=pB.to(dtype=torch.float32); pM=pM.to(dtype=torch.float32)
 
-            if mode=="xenium_exact":
-                probs_A = pA.index_select(1, used_idx)
-                probs_B = pB.index_select(1, used_idx)
-                probs_M = pM.index_select(1, used_idx)
-            else:
-                probs_A = pA @ M
-                probs_B = pB @ M
-                probs_M = pM @ M
+            probs_A = pA.index_select(1, used_idx)
+            probs_B = pB.index_select(1, used_idx)
+            probs_M = pM.index_select(1, used_idx)
 
         all_A.append(probs_A.cpu()); all_B.append(probs_B.cpu()); all_mix.append(probs_M.cpu())
         all_g.append(g.detach().float().cpu()); all_emb.append(emb.float().cpu())

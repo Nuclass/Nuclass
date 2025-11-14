@@ -13,10 +13,5 @@
     "root": "/abs/path/to/pancreas_holdout",
     "mode": "xenium_exact",
     "tissue": "pancreas"
-  },
-  "lizard": {
-    "root": "/abs/path/to/lizard_holdout",
-    "mode": "lizard_grouped",
-    "tissue": "colon"
   }
 }

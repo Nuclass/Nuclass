@@ -13,15 +13,15 @@ All three scripts expect a JSON file describing the evaluation datasets:
     "mode": "xenium_exact",
     "tissue": "ovary"
   },
-  "lizard": {
-    "root": "/abs/path/to/lizard_holdout",
-    "mode": "lizard_grouped",
-    "tissue": "colon"
+  "lung": {
+    "root": "/abs/path/to/lung_holdout",
+    "mode": "xenium_exact",
+    "tissue": "lung"
   }
 }
 ```
 
-Use `Nuclass/test/configs/holdouts_template.json` as a starting point and replace each `root` with the actual location of your holdout H5/JSON datasets. The `mode` field must be one of `xenium_exact` or `lizard_grouped`, and `tissue` determines the tissue index used for the run.
+Use `Nuclass/test/configs/holdouts_template.json` as a starting point and replace each `root` with the actual location of your holdout H5/JSON datasets. The `mode` field must be `xenium_exact`, and `tissue` determines the tissue index used for the run.
 
 ## Path-A Inference
 
@@ -40,7 +40,7 @@ python -m Nuclass.test.B_inference \
   --ckpt Nuclass/checkpoints/path_global_release/best.ckpt \
   --holdouts-config Nuclass/test/configs/holdouts_template.json \
   --output-dir Nuclass/results/test/path_b_inference \
-  --select ovary lizard
+  --select ovary lung
 ```
 
 Optional flags:
