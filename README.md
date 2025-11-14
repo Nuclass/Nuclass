@@ -13,11 +13,6 @@ To overcome the lack of a high-quality, unified, large-scale annotated training 
 
 Evaluated on four fully held-out cohorts, NuClass achieves up to **96%** F1 for its best-performing cell class, outperforming strong baselines. Our results demonstrate that multi-scale, uncertainty-aware fusion can bridge the gap between slide-level pathological foundation vision models and reliable, cell-level phenotype.
 
----
-
-End-to-end training, inference, and figure reproduction for the double-blind NuClass manuscript. Paths are fully configurable so collaborators can recreate every experiment after downloading the required public assets.
-
----
 
 ## 1. Installation
 
