@@ -11,7 +11,7 @@ To address these challenges, we introduce **NuClass**, a pathologist workflow-in
 
 To overcome the lack of a high-quality, unified, large-scale annotated training dataset, we construct a marker-guided dataset from Xenium spatial transcriptomics assays, providing single-cell-resolution annotations for over two million cells across eight organs and sixteen classes.
 
-Evaluated on four fully held-out cohorts, NuClass achieves up to **96%** F1 for its best-performing cell class, outperforming strong baselines. Our results demonstrate that multi-scale, uncertainty-aware fusion can bridge the gap between slide-level pathological foundation vision models and reliable, cell-level phenotype.
+Evaluated on three fully held-out cohorts, NuClass achieves up to **96%** F1 for its best-performing cell class, outperforming strong baselines. Our results demonstrate that multi-scale, uncertainty-aware fusion can bridge the gap between slide-level pathological foundation vision models and reliable, cell-level phenotype.
 
 
 ## 1. Installation
